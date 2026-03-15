@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>【奈良県】空手日程表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 pb-20">
+
+    <!-- ヘッダー -->
+    <header class="sticky top-0 z-50 bg-red-800 text-white shadow-lg p-4 text-center">
+        <h1 class="text-2xl font-black tracking-tighter">【奈良県】空手日程表</h1>
+    </header>
+
+    <!-- タブ -->
+    <div class="sticky top-[56px] z-40 bg-white border-b-2 border-gray-200 shadow-sm">
+        <div class="max-w-md mx-auto flex">
+            <button class="tab-btn flex-1 py-3 text-sm font-black text-gray-400 border-b-[3px] border-transparent transition-colors" data-tab="calendar" onclick="switchTab('calendar')">カレンダー</button>
+            <button class="tab-btn flex-1 py-3 text-sm font-black text-gray-400 border-b-[3px] border-transparent transition-colors" data-tab="list" onclick="switchTab('list')">一覧</button>
+            <button class="tab-btn flex-1 py-3 text-sm font-black text-gray-400 border-b-[3px] border-transparent transition-colors" data-tab="add" onclick="switchTab('add')">追加</button>
+            <button class="tab-btn flex-1 py-3 text-sm font-black text-gray-400 border-b-[3px] border-transparent transition-colors" data-tab="export" onclick="switchTab('export')">出力</button>
+        </div>
+    </div>
+
+    <!-- カテゴリフィルター -->
+    <div id="filterBar" class="sticky top-[105px] z-30 bg-white border-b border-gray-200 shadow-sm hidden">
+        <div class="max-w-md mx-auto px-4 py-2">
+            <div class="flex gap-2 overflow-x-auto hide-scrollbar">
+                <button class="filter-btn flex-shrink-0 px-3 py-1.5 text-[11px] font-black rounded-full border-2 transition-colors" data-cat="all" onclick="setFilter('all')">全て</button>
+                <button class="filter-btn flex-shrink-0 px-3 py-1.5 text-[11px] font-black rounded-full border-2 transition-colors" data-cat="elementary" onclick="setFilter('elementary')">小学生</button>
+                <button class="filter-btn flex-shrink-0 px-3 py-1.5 text-[11px] font-black rounded-full border-2 transition-colors" data-cat="junior" onclick="setFilter('junior')">中学生</button>
+                <button class="filter-btn flex-shrink-0 px-3 py-1.5 text-[11px] font-black rounded-full border-2 transition-colors" data-cat="high" onclick="setFilter('high')">高校生</button>
+                <button class="filter-btn flex-shrink-0 px-3 py-1.5 text-[11px] font-black rounded-full border-2 transition-colors" data-cat="other" onclick="setFilter('other')">その他</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- メイン -->
+    <main class="max-w-md mx-auto p-4 min-h-screen">
+
+        <!-- カレンダー -->
+        <div id="panel-calendar" class="panel hidden">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="changeMonth(-1)" class="bg-red-700 text-white w-10 h-10 rounded-lg font-black text-lg shadow active:bg-red-800 transition-colors">&lt;</button>
+                <span id="monthLabel" class="text-xl font-black tracking-tight"></span>
+                <button onclick="changeMonth(1)" class="bg-red-700 text-white w-10 h-10 rounded-lg font-black text-lg shadow active:bg-red-800 transition-colors">&gt;</button>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-3">
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+            </div>
+        </div>
+
+        <!-- 一覧 -->
+        <div id="panel-list" class="panel hidden">
+            <div id="scheduleList" class="space-y-3"></div>
+        </div>
+
+        <!-- 追加 -->
+        <div id="panel-add" class="panel hidden">
+            <!-- 1件追加 -->
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-4 text-gray-800">1件ずつ追加</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">カテゴリ</label>
+                        <select id="inputCategory" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                            <option value="elementary">小学生</option>
+                            <option value="junior">中学生</option>
+                            <option value="high">高校生</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">日付</label>
+                        <input type="date" id="inputDate" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">時間タイプ</label>
+                        <select id="inputTimeType" onchange="toggleTimeInputs()" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                            <option value="normal">時間指定</option>
+                            <option value="allday">全日</option>
+                            <option value="tbd">未定</option>
+                        </select>
+                    </div>
+                    <div id="timeInputs" class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">開始</label>
+                            <input type="time" id="inputStart" value="18:00" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">終了</label>
+                            <input type="time" id="inputEnd" value="19:30" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">場所</label>
+                        <input type="text" id="inputLocation" placeholder="例: 中央体育館" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base placeholder:text-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">メモ（任意）</label>
+                        <input type="text" id="inputMemo" placeholder="例: 形の練習" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base placeholder:text-gray-300">
+                    </div>
+                    <button onclick="addSingle()" class="w-full bg-red-700 text-white font-black py-3 rounded-lg shadow-md active:bg-red-800 active:scale-[0.98] transition-all text-base">追加</button>
+                </div>
+            </div>
+
+            <!-- まとめて追加 -->
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-4 text-gray-800">まとめてコピペ追加</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">カテゴリ（一括適用）</label>
+                        <select id="bulkCategory" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base">
+                            <option value="elementary">小学生</option>
+                            <option value="junior">中学生</option>
+                            <option value="high">高校生</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">予定を貼り付け</label>
+                        <textarea id="bulkInput" rows="7" placeholder="例:&#10;2026/4/5 18:00-19:30 中央体育館 形の練習&#10;2026/4/12 18:00-19:30 中央体育館&#10;2026/4/19 10:00-12:00 県立武道館 試合" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2.5 outline-none focus:border-red-600 text-base leading-relaxed placeholder:text-gray-300 resize-none"></textarea>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 leading-relaxed">
+                        <p class="font-black text-gray-600 mb-1">入力形式</p>
+                        <p><span class="font-bold text-gray-700">日付 開始-終了 場所 メモ</span>（1行1予定）</p>
+                        <p>日付: 2026/4/5 / 2026-04-05 / 4/5</p>
+                        <p>時間: 「全日」→全日 /「未定」→未定</p>
+                        <p>時間省略時は 18:00-19:30</p>
+                        <p>場所・メモは省略可能</p>
+                    </div>
+                    <button onclick="addBulk()" class="w-full bg-red-700 text-white font-black py-3 rounded-lg shadow-md active:bg-red-800 active:scale-[0.98] transition-all text-base">まとめて追加</button>
+                </div>
+            </div>
+
+            <!-- CSVファイル読込 -->
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-2 text-gray-800">CSVファイル読込</h3>
+                <p class="text-xs text-gray-400 mb-3">Excelで保存したCSVファイルをそのまま読み込めます（Shift-JIS / UTF-8 対応）</p>
+                <div class="space-y-3">
+                    <label class="block w-full bg-red-700 text-white font-black py-3 rounded-lg shadow-md text-center cursor-pointer active:bg-red-800 active:scale-[0.98] transition-all text-base">
+                        CSVファイルを選択
+                        <input type="file" accept=".csv,.tsv,.txt" id="csvFileInput" onchange="handleCSVFile(event)" class="hidden">
+                    </label>
+                    <div id="csvPreviewArea" class="hidden">
+                        <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                            <p class="text-xs font-black text-gray-600 mb-2">プレビュー（最初の5行）</p>
+                            <div id="csvPreviewTable" class="overflow-x-auto text-xs"></div>
+                        </div>
+                        <div class="space-y-2 mb-3">
+                            <p class="text-xs font-black text-gray-600">列の割り当て</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">日付</label>
+                                    <select id="csvColDate" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">カテゴリ</label>
+                                    <select id="csvColCategory" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">時間</label>
+                                    <select id="csvColTime" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">場所</label>
+                                    <select id="csvColLocation" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">メモ/大会名</label>
+                                    <select id="csvColMemo" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 mb-0.5">デフォルトカテゴリ</label>
+                                    <select id="csvDefaultCategory" class="w-full bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-2 py-1.5 text-xs outline-none focus:border-red-600">
+                                        <option value="">列から取得</option>
+                                        <option value="elementary">小学生</option>
+                                        <option value="junior">中学生</option>
+                                        <option value="high">高校生</option>
+                                        <option value="other">その他</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="csvParseResult" class="bg-blue-50 rounded-lg p-3 mb-3 text-xs font-bold text-blue-700 hidden"></div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="previewCSVImport()" class="bg-white text-red-700 font-black py-2.5 rounded-lg shadow-sm border-2 border-red-700 active:bg-red-50 active:scale-[0.98] transition-all text-sm">確認</button>
+                            <button onclick="executeCSVImport()" class="bg-red-700 text-white font-black py-2.5 rounded-lg shadow-md active:bg-red-800 active:scale-[0.98] transition-all text-sm">読込実行</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 場所の登録 -->
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-2 text-gray-800">よく使う場所</h3>
+                <p class="text-xs text-gray-400 mb-3">登録しておくと入力時に選べます。Googleマップ連携にも使われます。</p>
+                <div id="locationList" class="space-y-2 mb-3"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="newLocationName" placeholder="場所名" class="flex-1 bg-gray-100 border-2 border-gray-300 font-bold rounded-lg px-3 py-2 outline-none focus:border-red-600 text-sm placeholder:text-gray-300">
+                    <button onclick="addLocation()" class="bg-red-700 text-white font-black px-4 py-2 rounded-lg shadow-sm active:bg-red-800 text-sm">登録</button>
+                </div>
+            </div>
+
+            <!-- テンプレート -->
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h3 class="text-sm font-black mb-2 text-gray-600">入力テンプレート（長押しでコピー）</h3>
+                <div id="templateBox" class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-3 text-sm leading-loose select-all whitespace-pre-line font-bold text-gray-700"></div>
+            </div>
+        </div>
+
+        <!-- 出力 -->
+        <div id="panel-export" class="panel hidden">
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-2 text-gray-800">iPhoneカレンダーに追加</h3>
+                <p class="text-xs text-gray-400 mb-4">.icsファイルをダウンロードして開くと、iPhoneのカレンダーアプリに予定を追加できます。</p>
+                <button onclick="exportICS()" class="w-full bg-green-600 text-white font-black py-3 rounded-lg shadow-md active:bg-green-700 active:scale-[0.98] transition-all text-base">カレンダーファイル(.ics)を出力</button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-5 mb-4">
+                <h3 class="text-lg font-black mb-3 text-gray-800">テキストコピー</h3>
+                <button onclick="copyAsText()" class="w-full bg-white text-red-700 font-black py-3 rounded-lg shadow-sm border-2 border-red-700 active:bg-red-50 active:scale-[0.98] transition-all text-base">予定をテキストでコピー</button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-5">
+                <h3 class="text-lg font-black mb-3 text-gray-800">データ管理</h3>
+                <button onclick="clearAll()" class="w-full bg-white text-gray-500 font-black py-3 rounded-lg shadow-sm border-2 border-gray-300 active:bg-gray-100 active:scale-[0.98] transition-all text-base">全データ削除</button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="p-8 text-center text-gray-400 bg-gray-50 border-t">
+        <p class="text-sm font-bold">【奈良県】空手日程表</p>
+    </footer>
+
+    <!-- 日付詳細シート -->
+    <div id="dayDetail" class="fixed inset-0 bg-black/40 z-[150] hidden items-end justify-center">
+        <div class="bg-white rounded-t-2xl p-5 w-full max-w-md max-h-[60vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="dayDetailTitle" class="text-xl font-black"></h3>
+                <button onclick="closeDayDetail()" class="text-gray-400 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="dayDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- トースト -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black/80 text-white px-6 py-2.5 rounded-full text-sm font-bold z-[200] opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+
+    <script>
+    const STORAGE_KEY = 'karate_schedule';
+    const LOCATIONS_KEY = 'karate_locations';
+    const DOW = ['日','月','火','水','木','金','土'];
+
+    // カテゴリ定義
+    const CATEGORIES = {
+        elementary:   { label: '小学生', color: 'bg-blue-600',   border: 'border-blue-600',   text: 'text-blue-700',   light: 'bg-blue-50' },
+        junior:       { label: '中学生', color: 'bg-green-600',  border: 'border-green-600',  text: 'text-green-700',  light: 'bg-green-50' },
+        high:         { label: '高校生', color: 'bg-purple-600', border: 'border-purple-600', text: 'text-purple-700', light: 'bg-purple-50' },
+        other:        { label: 'その他', color: 'bg-rose-500',   border: 'border-rose-500',   text: 'text-rose-600',   light: 'bg-rose-50' },
+    };
+
+    let schedules = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let locations = JSON.parse(localStorage.getItem(LOCATIONS_KEY) || '[]');
+    let currentYear, currentMonth;
+    let currentFilter = 'all';
+
+    // ========== 初期化 ==========
+    function init() {
+        const today = new Date();
+        currentYear = today.getFullYear();
+        currentMonth = today.getMonth();
+        document.getElementById('inputDate').value = formatDateISO(today);
+        // 既存データにcategory/location/timeTypeがない場合のマイグレーション
+        schedules.forEach(s => {
+            if (!s.category) s.category = 'elementary';
+            if (s.category === 'prefectural' || s.category === 'event') s.category = 'other';
+            if (!s.location) s.location = '';
+            if (!s.timeType) s.timeType = 'normal';
+        });
+        save();
+        switchTab('calendar');
+    }
+
+    function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(schedules));
+    }
+
+    function saveLocations() {
+        localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+    }
+
+    function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.remove('opacity-0');
+        el.classList.add('opacity-100');
+        setTimeout(() => { el.classList.remove('opacity-100'); el.classList.add('opacity-0'); }, 2000);
+    }
+
+    function getCat(key) {
+        return CATEGORIES[key] || CATEGORIES.elementary;
+    }
+
+    function toggleTimeInputs() {
+        const type = document.getElementById('inputTimeType').value;
+        document.getElementById('timeInputs').style.display = type === 'normal' ? '' : 'none';
+    }
+
+    function timeDisplay(s) {
+        if (s.timeType === 'allday') return '全日';
+        if (s.timeType === 'tbd') return '未定';
+        return `${s.start} 〜 ${s.end}`;
+    }
+
+    function timeDisplayShort(s) {
+        if (s.timeType === 'allday') return '全日';
+        if (s.timeType === 'tbd') return '未定';
+        return `${s.start} - ${s.end}`;
+    }
+
+    function googleMapsUrl(location) {
+        return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location);
+    }
+
+    // ========== フィルター ==========
+    function setFilter(cat) {
+        currentFilter = cat;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            const isActive = b.dataset.cat === cat;
+            b.classList.toggle('bg-red-700', isActive);
+            b.classList.toggle('text-white', isActive);
+            b.classList.toggle('border-red-700', isActive);
+            b.classList.toggle('bg-white', !isActive);
+            b.classList.toggle('text-gray-500', !isActive);
+            b.classList.toggle('border-gray-300', !isActive);
+        });
+        renderCalendar();
+        renderList();
+    }
+
+    function filteredSchedules() {
+        if (currentFilter === 'all') return schedules;
+        return schedules.filter(s => s.category === currentFilter);
+    }
+
+    // ========== タブ ==========
+    function switchTab(name) {
+        document.querySelectorAll('.tab-btn').forEach(t => {
+            const isActive = t.dataset.tab === name;
+            t.classList.toggle('text-red-700', isActive);
+            t.classList.toggle('border-red-700', isActive);
+            t.classList.toggle('text-gray-400', !isActive);
+            t.classList.toggle('border-transparent', !isActive);
+        });
+        document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById('panel-' + name).classList.remove('hidden');
+
+        // フィルターバーはカレンダーと一覧のみ表示
+        const showFilter = (name === 'calendar' || name === 'list');
+        document.getElementById('filterBar').classList.toggle('hidden', !showFilter);
+
+        if (name === 'calendar') renderCalendar();
+        if (name === 'list') renderList();
+        if (name === 'add') { generateTemplate(); renderLocationList(); }
+    }
+
+    // ========== カレンダー ==========
+    function changeMonth(d) {
+        currentMonth += d;
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        document.getElementById('monthLabel').textContent = `${currentYear}年${currentMonth + 1}月`;
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = '';
+
+        DOW.forEach((d, i) => {
+            const cls = i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-400';
+            grid.innerHTML += `<div class="text-center text-xs font-black py-1.5 ${cls}">${d}</div>`;
+        });
+
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const today = new Date();
+        const todayStr = formatDateISO(today);
+        const filtered = filteredSchedules();
+
+        // 予定マップ（カテゴリ色の配列）
+        const schedMap = {};
+        filtered.forEach(s => {
+            const sd = new Date(s.date);
+            if (sd.getFullYear() === currentYear && sd.getMonth() === currentMonth) {
+                const key = sd.getDate();
+                if (!schedMap[key]) schedMap[key] = new Set();
+                schedMap[key].add(s.category || 'elementary');
+            }
+        });
+
+        const prevLastDate = new Date(currentYear, currentMonth, 0).getDate();
+        for (let i = firstDay - 1; i >= 0; i--) {
+            grid.innerHTML += `<div class="aspect-square flex flex-col items-center justify-center text-sm text-gray-300 rounded-lg">${prevLastDate - i}</div>`;
+        }
+
+        for (let d = 1; d <= lastDate; d++) {
+            const dateObj = new Date(currentYear, currentMonth, d);
+            const dow = dateObj.getDay();
+            const isToday = formatDateISO(dateObj) === todayStr;
+            const colorCls = dow === 0 ? 'text-red-500' : dow === 6 ? 'text-blue-500' : '';
+            const bgCls = isToday ? 'bg-yellow-200 font-black' : '';
+            const cats = schedMap[d];
+
+            let dots = '';
+            if (cats) {
+                const dotColors = [...cats].slice(0, 3).map(c => getCat(c).color);
+                dots = `<div class="flex gap-0.5 absolute bottom-0.5">${dotColors.map(cl => `<div class="w-1.5 h-1.5 ${cl} rounded-full"></div>`).join('')}</div>`;
+            }
+
+            grid.innerHTML += `
+                <div onclick="showDayDetail(${currentYear},${currentMonth},${d})"
+                     class="aspect-square flex flex-col items-center justify-center text-sm rounded-lg cursor-pointer relative active:bg-gray-100 transition-colors ${colorCls} ${bgCls}">
+                    ${d}
+                    ${dots}
+                </div>`;
+        }
+
+        const totalCells = firstDay + lastDate;
+        const remaining = (7 - (totalCells % 7)) % 7;
+        for (let i = 1; i <= remaining; i++) {
+            grid.innerHTML += `<div class="aspect-square flex flex-col items-center justify-center text-sm text-gray-300 rounded-lg">${i}</div>`;
+        }
+    }
+
+    function showDayDetail(y, m, d) {
+        const dateObj = new Date(y, m, d);
+        const dateStr = formatDateISO(dateObj);
+        const dayScheds = filteredSchedules().filter(s => s.date === dateStr);
+        const title = `${m+1}/${d}(${DOW[dateObj.getDay()]})`;
+
+        document.getElementById('dayDetailTitle').textContent = title;
+        const content = document.getElementById('dayDetailContent');
+
+        if (dayScheds.length === 0) {
+            content.innerHTML = `
+                <div class="text-center py-8 text-gray-400 font-bold">予定はありません</div>
+                <button onclick="quickAdd('${dateStr}')" class="w-full bg-red-700 text-white font-black py-3 rounded-lg shadow-md active:bg-red-800 transition-all">この日に予定を追加</button>`;
+        } else {
+            content.innerHTML = dayScheds.map(s => {
+                const cat = getCat(s.category);
+                return `
+                <div class="border-l-4 ${cat.border} ${cat.light} rounded-r-lg p-3 mb-2">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded text-white ${cat.color}">${cat.label}</span>
+                            </div>
+                            <div class="font-black text-base">
+                                <svg class="w-4 h-4 inline-block mr-1 ${cat.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                ${timeDisplayShort(s)}
+                            </div>
+                            ${s.location ? `<div class="text-xs text-gray-600 font-bold mt-1 flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                                <a href="${googleMapsUrl(s.location)}" target="_blank" rel="noopener" class="underline text-green-700">${escapeHtml(s.location)}</a>
+                            </div>` : ''}
+                            ${s.memo ? `<div class="text-xs text-gray-500 mt-1 font-bold">${escapeHtml(s.memo)}</div>` : ''}
+                        </div>
+                        <button onclick="deleteSchedule('${s.id}')" class="text-gray-300 text-xl ml-3 active:text-red-600">&times;</button>
+                    </div>
+                </div>`;
+            }).join('') +
+            `<button onclick="quickAdd('${dateStr}')" class="w-full bg-red-700 text-white font-black py-3 rounded-lg shadow-md mt-3 active:bg-red-800 transition-all">追加</button>`;
+        }
+
+        const overlay = document.getElementById('dayDetail');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+    }
+
+    function closeDayDetail() {
+        const overlay = document.getElementById('dayDetail');
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+    }
+
+    function quickAdd(dateStr) {
+        closeDayDetail();
+        switchTab('add');
+        document.getElementById('inputDate').value = dateStr;
+    }
+
+    // ========== 一覧 ==========
+    function renderList() {
+        const container = document.getElementById('scheduleList');
+        const filtered = filteredSchedules();
+        const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="bg-white p-10 rounded-xl text-center font-bold text-gray-400">予定がありません<br>「追加」タブから入力してください</div>';
+            return;
+        }
+
+        const todayStr = formatDateISO(new Date());
+        const upcoming = sorted.filter(s => s.date >= todayStr);
+        const past = sorted.filter(s => s.date < todayStr).reverse();
+
+        let html = '';
+
+        const renderGroup = (items, label) => {
+            if (items.length === 0) return '';
+            let result = `
+                <div class="flex items-center justify-center py-3">
+                    <div class="h-px bg-gray-300 flex-grow"></div>
+                    <span class="px-4 text-[10px] font-black text-gray-400 tracking-widest uppercase">${label}</span>
+                    <div class="h-px bg-gray-300 flex-grow"></div>
+                </div>`;
+
+            let lastYm = '';
+            items.forEach(s => {
+                const d = new Date(s.date);
+                const ym = `${d.getFullYear()}/${d.getMonth()+1}`;
+                if (ym !== lastYm) {
+                    lastYm = ym;
+                    result += `
+                        <div class="flex items-center justify-center py-2">
+                            <div class="h-px bg-gray-200 flex-grow"></div>
+                            <span class="px-3 text-[10px] font-black text-gray-300 tracking-widest">${d.getFullYear()}年${d.getMonth()+1}月</span>
+                            <div class="h-px bg-gray-200 flex-grow"></div>
+                        </div>`;
+                }
+                result += scheduleCardHTML(s, todayStr);
+            });
+            return result;
+        };
+
+        html += renderGroup(upcoming, 'これからの予定');
+        html += renderGroup(past, '過去の予定');
+
+        container.innerHTML = html;
+    }
+
+    function scheduleCardHTML(s, todayStr) {
+        const d = new Date(s.date);
+        const m = d.getMonth() + 1;
+        const day = d.getDate();
+        const dow = DOW[d.getDay()];
+        const isPast = s.date < todayStr;
+        const cat = getCat(s.category);
+        const borderColor = isPast ? 'border-gray-300' : cat.border;
+        const opacity = isPast ? 'opacity-60' : '';
+
+        // ボタン構築
+        let buttons = [];
+
+        if (s.location) {
+            buttons.push(`<a href="${googleMapsUrl(s.location)}" target="_blank" rel="noopener" class="flex items-center justify-center bg-green-600 text-white text-[10px] font-black py-2.5 rounded-lg shadow-sm active:bg-green-700 transition-all">地図</a>`);
+        }
+
+        buttons.push(`<button onclick="exportSingleICS('${s.id}')" class="flex items-center justify-center bg-blue-600 text-white text-[10px] font-black py-2.5 rounded-lg shadow-sm active:bg-blue-700 transition-all">保存</button>`);
+
+        buttons.push(`<button onclick="deleteSchedule('${s.id}')" class="flex items-center justify-center bg-white text-gray-400 text-[10px] font-black py-2.5 rounded-lg shadow-sm border border-gray-200 active:bg-red-50 active:text-red-600 transition-all">削除</button>`);
+
+        const gridCols = buttons.length === 3 ? 'grid-cols-3' : 'grid-cols-2';
+
+        return `
+            <div class="relative border-l-8 ${borderColor} rounded-r-xl shadow-md bg-white p-4 active:scale-[0.98] transition-all ${opacity}">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-2xl font-black tracking-tight">${m}/${day}<span class="text-base ml-1 text-gray-500">(${dow})</span></span>
+                    <span class="text-[10px] font-bold px-2 py-1 rounded text-white ${cat.color}">${cat.label}</span>
+                </div>
+                <div class="mb-3">
+                    <div class="${cat.text} font-bold flex items-center text-lg">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        ${timeDisplay(s)}
+                    </div>
+                    ${s.location ? `<div class="text-gray-600 font-bold flex items-center text-sm mt-1">
+                        <svg class="w-4 h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                        ${escapeHtml(s.location)}
+                    </div>` : ''}
+                    ${s.memo ? `<div class="text-gray-500 font-bold text-sm mt-1">${escapeHtml(s.memo)}</div>` : ''}
+                </div>
+                <div class="grid ${gridCols} gap-2">
+                    ${buttons.join('')}
+                </div>
+            </div>`;
+    }
+
+    // ========== 場所管理 ==========
+    function renderLocationList() {
+        const container = document.getElementById('locationList');
+        if (locations.length === 0) {
+            container.innerHTML = '<p class="text-xs text-gray-400">登録された場所はありません</p>';
+            return;
+        }
+        container.innerHTML = locations.map((loc, i) => `
+            <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                <button onclick="fillLocation('${escapeHtml(loc)}')" class="flex-1 text-left text-sm font-bold text-gray-700 active:text-red-600">${escapeHtml(loc)}</button>
+                <a href="${googleMapsUrl(loc)}" target="_blank" rel="noopener" class="text-green-600 text-xs font-black px-2 py-1 bg-green-50 rounded active:bg-green-100">地図</a>
+                <button onclick="removeLocation(${i})" class="text-gray-300 text-lg active:text-red-600">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function addLocation() {
+        const name = document.getElementById('newLocationName').value.trim();
+        if (!name) { toast('場所名を入力してください'); return; }
+        if (locations.includes(name)) { toast('既に登録されています'); return; }
+        locations.push(name);
+        saveLocations();
+        document.getElementById('newLocationName').value = '';
+        renderLocationList();
+        toast('場所を登録しました');
+    }
+
+    function removeLocation(index) {
+        locations.splice(index, 1);
+        saveLocations();
+        renderLocationList();
+        toast('場所を削除しました');
+    }
+
+    function fillLocation(name) {
+        document.getElementById('inputLocation').value = name;
+        toast(`「${name}」をセットしました`);
+    }
+
+    // ========== 追加 ==========
+    function addSingle() {
+        const date = document.getElementById('inputDate').value;
+        const timeType = document.getElementById('inputTimeType').value;
+        const start = timeType === 'normal' ? document.getElementById('inputStart').value : '';
+        const end = timeType === 'normal' ? document.getElementById('inputEnd').value : '';
+        const memo = document.getElementById('inputMemo').value.trim();
+        const location = document.getElementById('inputLocation').value.trim();
+        const category = document.getElementById('inputCategory').value;
+
+        if (!date) { toast('日付を入力してください'); return; }
+
+        schedules.push({ id: genId(), date, start: start || '18:00', end: end || '19:30', timeType, memo, location, category });
+        save();
+        toast('追加しました');
+        document.getElementById('inputMemo').value = '';
+
+        const next = new Date(date);
+        next.setDate(next.getDate() + 7);
+        document.getElementById('inputDate').value = formatDateISO(next);
+    }
+
+    function addBulk() {
+        const text = document.getElementById('bulkInput').value.trim();
+        const category = document.getElementById('bulkCategory').value;
+        if (!text) { toast('テキストを入力してください'); return; }
+
+        const lines = text.split('\n').filter(l => l.trim());
+        let added = 0;
+
+        for (const line of lines) {
+            const parsed = parseLine(line.trim());
+            if (parsed) {
+                schedules.push({ id: genId(), category, ...parsed });
+                added++;
+            }
+        }
+
+        if (added > 0) {
+            save();
+            toast(`${added}件追加しました`);
+            document.getElementById('bulkInput').value = '';
+        } else {
+            toast('解析できる予定がありませんでした');
+        }
+    }
+
+    function parseLine(line) {
+        let match = line.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        let year, month, day, rest;
+
+        if (match) {
+            year = parseInt(match[1]);
+            month = parseInt(match[2]);
+            day = parseInt(match[3]);
+            rest = line.slice(match[0].length).trim();
+        } else {
+            match = line.match(/^(\d{1,2})[\/\-](\d{1,2})/);
+            if (match) {
+                const today = new Date();
+                year = today.getFullYear();
+                month = parseInt(match[1]);
+                day = parseInt(match[2]);
+                if (month < today.getMonth() + 1) year++;
+                rest = line.slice(match[0].length).trim();
+            } else {
+                return null;
+            }
+        }
+
+        const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+        let start = '18:00', end = '19:30', memo = '', location = '', timeType = 'normal';
+
+        // 「全日」「未定」キーワードチェック
+        const alldayMatch = rest.match(/^全日\s*/);
+        const tbdMatch = rest.match(/^未定\s*/);
+
+        if (alldayMatch) {
+            timeType = 'allday';
+            rest = rest.slice(alldayMatch[0].length).trim();
+        } else if (tbdMatch) {
+            timeType = 'tbd';
+            rest = rest.slice(tbdMatch[0].length).trim();
+        } else {
+            const timeMatch = rest.match(/(\d{1,2}:\d{2})\s*[-~〜]\s*(\d{1,2}:\d{2})/);
+            if (timeMatch) {
+                start = timeMatch[1].padStart(5, '0');
+                end = timeMatch[2].padStart(5, '0');
+                rest = rest.slice(rest.indexOf(timeMatch[0]) + timeMatch[0].length).trim();
+            } else {
+                const singleTime = rest.match(/(\d{1,2}:\d{2})/);
+                if (singleTime) {
+                    start = singleTime[1].padStart(5, '0');
+                    const [h, m] = start.split(':').map(Number);
+                    const endMin = h * 60 + m + 90;
+                    end = `${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}`;
+                    rest = rest.slice(rest.indexOf(singleTime[0]) + singleTime[0].length).trim();
+                }
+            }
+        }
+
+        // 残りの部分: 登録済み場所名に一致すれば場所、それ以外はメモ
+        // または最初のトークンを場所、残りをメモとする
+        if (rest) {
+            // 登録済み場所に一致するか確認
+            const matchedLoc = locations.find(loc => rest.startsWith(loc));
+            if (matchedLoc) {
+                location = matchedLoc;
+                memo = rest.slice(matchedLoc.length).trim();
+            } else {
+                // スペースで分割して最初を場所、残りをメモ
+                const parts = rest.split(/\s+/);
+                if (parts.length >= 2) {
+                    location = parts[0];
+                    memo = parts.slice(1).join(' ');
+                } else {
+                    memo = rest;
+                }
+            }
+        }
+
+        return { date: dateStr, start, end, timeType, memo, location };
+    }
+
+    function generateTemplate() {
+        const today = new Date();
+        const lines = [];
+        const d = new Date(today);
+        d.setDate(d.getDate() + (6 - d.getDay() + 7) % 7);
+        if (d <= today) d.setDate(d.getDate() + 7);
+        const loc = locations.length > 0 ? ' ' + locations[0] : '';
+
+        for (let i = 0; i < 4; i++) {
+            lines.push(`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} 18:00-19:30${loc}`);
+            d.setDate(d.getDate() + 7);
+        }
+
+        document.getElementById('templateBox').textContent = lines.join('\n');
+    }
+
+    // ========== 削除 ==========
+    function deleteSchedule(id) {
+        schedules = schedules.filter(s => s.id !== id);
+        save();
+        renderList();
+        renderCalendar();
+        closeDayDetail();
+        toast('削除しました');
+    }
+
+    function clearAll() {
+        if (confirm('全ての予定を削除しますか？')) {
+            schedules = [];
+            save();
+            renderList();
+            renderCalendar();
+            toast('全て削除しました');
+        }
+    }
+
+    // ========== エクスポート ==========
+    function buildICSEvent(s) {
+        const [y, m, d] = s.date.split('-');
+        const cat = getCat(s.category);
+        const summary = `空手(${cat.label})${s.memo ? ' - ' + s.memo : ''}`;
+        const loc = s.location ? `LOCATION:${s.location}\r\n` : '';
+
+        if (s.timeType === 'allday' || s.timeType === 'tbd') {
+            // 終日イベント（未定も終日扱い）
+            const nextDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d) + 1);
+            const dtEnd = `${nextDate.getFullYear()}${String(nextDate.getMonth()+1).padStart(2,'0')}${String(nextDate.getDate()).padStart(2,'0')}`;
+            const desc = s.timeType === 'tbd' ? '時間未定' : '空手の練習';
+            return `BEGIN:VEVENT\r\nDTSTART;VALUE=DATE:${y}${m}${d}\r\nDTEND;VALUE=DATE:${dtEnd}\r\nSUMMARY:${summary}\r\n${loc}DESCRIPTION:${desc}\r\nEND:VEVENT\r\n`;
+        }
+
+        const [sh, sm] = s.start.split(':');
+        const [eh, em] = s.end.split(':');
+        const dtStart = `${y}${m}${d}T${sh}${sm}00`;
+        const dtEnd = `${y}${m}${d}T${eh}${em}00`;
+        return `BEGIN:VEVENT\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${summary}\r\n${loc}DESCRIPTION:空手の練習\r\nEND:VEVENT\r\n`;
+    }
+
+    function exportICS() {
+        const filtered = filteredSchedules();
+        if (filtered.length === 0) { toast('予定がありません'); return; }
+        let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//KarateSchedule//JP\r\nCALSCALE:GREGORIAN\r\n';
+        filtered.forEach(s => { ics += buildICSEvent(s); });
+        ics += 'END:VCALENDAR\r\n';
+        downloadICS(ics, 'karate_schedule.ics');
+    }
+
+    function exportSingleICS(id) {
+        const s = schedules.find(x => x.id === id);
+        if (!s) return;
+        let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//KarateSchedule//JP\r\nCALSCALE:GREGORIAN\r\n';
+        ics += buildICSEvent(s);
+        ics += 'END:VCALENDAR\r\n';
+        downloadICS(ics, `karate_${s.date}.ics`);
+    }
+
+    function downloadICS(icsContent, filename) {
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('.icsファイルをダウンロードしました');
+    }
+
+    function copyAsText() {
+        const filtered = filteredSchedules();
+        if (filtered.length === 0) { toast('予定がありません'); return; }
+
+        const sorted = [...filtered].sort((a, b) => a.date.localeCompare(b.date));
+        const text = sorted.map(s => {
+            const d = new Date(s.date);
+            const cat = getCat(s.category);
+            const timeStr = s.timeType === 'allday' ? '全日' : s.timeType === 'tbd' ? '未定' : `${s.start}-${s.end}`;
+            let line = `${s.date.replace(/-/g,'/')} (${DOW[d.getDay()]}) ${timeStr} [${cat.label}]`;
+            if (s.location) line += ` @${s.location}`;
+            if (s.memo) line += ` ${s.memo}`;
+            return line;
+        }).join('\n');
+
+        navigator.clipboard.writeText(text).then(() => {
+            toast('コピーしました');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            toast('コピーしました');
+        });
+    }
+
+    // ========== ユーティリティ ==========
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+    function formatDateISO(d) {
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function escapeHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.getElementById('dayDetail').addEventListener('click', function(e) {
+        if (e.target === this) closeDayDetail();
+    });
+
+    // ========== CSV読込 ==========
+    let csvData = []; // パース済みCSV行の配列
+
+    async function handleCSVFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Shift-JIS / UTF-8 両対応
+        let text = '';
+        try {
+            // まずShift-JISで試す（Excelの日本語CSVはほぼShift-JIS）
+            const buf = await file.arrayBuffer();
+            const decoder = new TextDecoder('shift-jis');
+            text = decoder.decode(buf);
+            // 文字化けチェック: UTF-8のBOMや典型的文字化けパターン
+            if (text.charCodeAt(0) === 0xFEFF || text.includes('ï¿½') || text.includes('Ã')) {
+                const decoder2 = new TextDecoder('utf-8');
+                text = decoder2.decode(buf);
+            }
+        } catch (e) {
+            text = await file.text(); // フォールバック
+        }
+
+        // CSV/TSVパース
+        const separator = text.includes('\t') ? '\t' : ',';
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        csvData = lines.map(l => parseCSVLine(l, separator));
+
+        if (csvData.length === 0) {
+            toast('データが読み取れませんでした');
+            return;
+        }
+
+        // プレビュー表示
+        showCSVPreview();
+        document.getElementById('csvPreviewArea').classList.remove('hidden');
+    }
+
+    function parseCSVLine(line, sep) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (inQuotes) {
+                if (c === '"' && line[i+1] === '"') { current += '"'; i++; }
+                else if (c === '"') { inQuotes = false; }
+                else { current += c; }
+            } else {
+                if (c === '"') { inQuotes = true; }
+                else if (c === sep) { result.push(current.trim()); current = ''; }
+                else { current += c; }
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    function showCSVPreview() {
+        const maxCols = Math.max(...csvData.slice(0, 10).map(r => r.length));
+        const previewRows = csvData.slice(0, 5);
+
+        // テーブル
+        let html = '<table class="w-full border-collapse text-[11px]">';
+        html += '<thead><tr>';
+        for (let c = 0; c < maxCols; c++) {
+            html += `<th class="border border-gray-300 bg-gray-200 px-2 py-1 text-left font-black">列${c+1}</th>`;
+        }
+        html += '</tr></thead><tbody>';
+        previewRows.forEach((row, i) => {
+            html += `<tr class="${i === 0 ? 'bg-yellow-50' : ''}">`;
+            for (let c = 0; c < maxCols; c++) {
+                html += `<td class="border border-gray-200 px-2 py-1 whitespace-nowrap">${escapeHtml(row[c] || '')}</td>`;
+            }
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        if (csvData.length > 5) html += `<p class="text-gray-400 mt-1">... 他${csvData.length - 5}行</p>`;
+        document.getElementById('csvPreviewTable').innerHTML = html;
+
+        // 列マッピングドロップダウン
+        const colOpts = '<option value="-1">（なし）</option>' +
+            Array.from({length: maxCols}, (_, i) => {
+                const sample = csvData.slice(0, 3).map(r => r[i] || '').filter(Boolean).join(', ');
+                return `<option value="${i}">列${i+1}: ${escapeHtml(sample.slice(0, 20))}</option>`;
+            }).join('');
+
+        ['csvColDate','csvColCategory','csvColTime','csvColLocation','csvColMemo'].forEach(id => {
+            document.getElementById(id).innerHTML = colOpts;
+        });
+
+        // 自動推定
+        autoDetectColumns();
+    }
+
+    function autoDetectColumns() {
+        const sampleRows = csvData.slice(0, Math.min(10, csvData.length));
+        const maxCols = Math.max(...sampleRows.map(r => r.length));
+
+        for (let c = 0; c < maxCols; c++) {
+            const samples = sampleRows.map(r => r[c] || '').filter(Boolean);
+            const joined = samples.join(' ');
+
+            // 日付列: 数字/区切りパターン
+            if (samples.some(s => /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(s) || /^\d{1,2}[\/\-]\d{1,2}/.test(s))) {
+                document.getElementById('csvColDate').value = c;
+            }
+            // カテゴリ列: カテゴリ名を含む
+            if (samples.some(s => /小学|中学|高校|県強化|その他|行事/.test(s))) {
+                document.getElementById('csvColCategory').value = c;
+            }
+            // 時間列: 時刻パターン or 全日/未定
+            if (samples.some(s => /\d{1,2}:\d{2}/.test(s) || /全日|未定|終日/.test(s))) {
+                document.getElementById('csvColTime').value = c;
+            }
+            // 場所列: 体育館、アリーナ、公園、道場、高校、中学
+            if (samples.some(s => /体育館|アリーナ|公園|道場|武道館|高校|中学校|学校|センター/.test(s))) {
+                document.getElementById('csvColLocation').value = c;
+            }
+        }
+    }
+
+    function csvCategoryToKey(val) {
+        if (!val) return null;
+        if (/小学/.test(val)) return 'elementary';
+        if (/中学/.test(val)) return 'junior';
+        if (/高校/.test(val)) return 'high';
+        if (/その他|行事|大会|強化/.test(val)) return 'other';
+        return null;
+    }
+
+    function csvParseDate(val) {
+        if (!val) return null;
+        // 連続日程(6/27-28等)は初日を返す
+        let m = val.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (m) return `${m[1]}-${String(parseInt(m[2])).padStart(2,'0')}-${String(parseInt(m[3])).padStart(2,'0')}`;
+        m = val.match(/(\d{1,2})[\/\-](\d{1,2})/);
+        if (m) {
+            const today = new Date();
+            let year = today.getFullYear();
+            const month = parseInt(m[1]);
+            if (month < today.getMonth() + 1) year++;
+            return `${year}-${String(month).padStart(2,'0')}-${String(parseInt(m[2])).padStart(2,'0')}`;
+        }
+        return null;
+    }
+
+    function csvParseTime(val) {
+        if (!val) return { timeType: 'allday', start: '', end: '' };
+        if (/全日|終日/.test(val)) return { timeType: 'allday', start: '', end: '' };
+        if (/未定/.test(val)) return { timeType: 'tbd', start: '', end: '' };
+        const m = val.match(/(\d{1,2}:\d{2})\s*[-~〜]\s*(\d{1,2}:\d{2})/);
+        if (m) return { timeType: 'normal', start: m[1].padStart(5,'0'), end: m[2].padStart(5,'0') };
+        const s = val.match(/(\d{1,2}:\d{2})/);
+        if (s) {
+            const st = s[1].padStart(5,'0');
+            const [h, mi] = st.split(':').map(Number);
+            const endMin = h * 60 + mi + 90;
+            return { timeType: 'normal', start: st, end: `${String(Math.floor(endMin/60)).padStart(2,'0')}:${String(endMin%60).padStart(2,'0')}` };
+        }
+        return { timeType: 'allday', start: '', end: '' };
+    }
+
+    function buildCSVSchedules() {
+        const colDate = parseInt(document.getElementById('csvColDate').value);
+        const colCat = parseInt(document.getElementById('csvColCategory').value);
+        const colTime = parseInt(document.getElementById('csvColTime').value);
+        const colLoc = parseInt(document.getElementById('csvColLocation').value);
+        const colMemo = parseInt(document.getElementById('csvColMemo').value);
+        const defaultCat = document.getElementById('csvDefaultCategory').value;
+
+        const results = [];
+        for (const row of csvData) {
+            const dateStr = colDate >= 0 ? csvParseDate(row[colDate]) : null;
+            if (!dateStr) continue; // 日付がなければスキップ
+
+            let category = defaultCat || 'elementary';
+            if (!defaultCat && colCat >= 0) {
+                category = csvCategoryToKey(row[colCat]) || 'elementary';
+            }
+
+            const timeInfo = colTime >= 0 ? csvParseTime(row[colTime]) : { timeType: 'allday', start: '', end: '' };
+            const location = colLoc >= 0 ? (row[colLoc] || '') : '';
+            const memo = colMemo >= 0 ? (row[colMemo] || '') : '';
+
+            results.push({
+                id: genId(),
+                date: dateStr,
+                start: timeInfo.start || '18:00',
+                end: timeInfo.end || '19:30',
+                timeType: timeInfo.timeType,
+                memo,
+                location,
+                category
+            });
+        }
+        return results;
+    }
+
+    function previewCSVImport() {
+        const items = buildCSVSchedules();
+        const el = document.getElementById('csvParseResult');
+        el.classList.remove('hidden');
+
+        if (items.length === 0) {
+            el.className = 'bg-red-50 rounded-lg p-3 mb-3 text-xs font-bold text-red-700';
+            el.textContent = '読み取れる予定が0件です。列の割り当てを確認してください。';
+            return;
+        }
+
+        // カテゴリ別集計
+        const counts = {};
+        items.forEach(s => {
+            const label = getCat(s.category).label;
+            counts[label] = (counts[label] || 0) + 1;
+        });
+        const summary = Object.entries(counts).map(([k,v]) => `${k}: ${v}件`).join('、');
+
+        el.className = 'bg-blue-50 rounded-lg p-3 mb-3 text-xs font-bold text-blue-700';
+        el.innerHTML = `${items.length}件の予定を読み取りました<br>${summary}`;
+    }
+
+    function executeCSVImport() {
+        const items = buildCSVSchedules();
+        if (items.length === 0) {
+            toast('読み取れる予定がありません');
+            return;
+        }
+
+        if (!confirm(`${items.length}件の予定を追加しますか？`)) return;
+
+        schedules.push(...items);
+        save();
+        toast(`${items.length}件追加しました`);
+
+        // リセット
+        document.getElementById('csvPreviewArea').classList.add('hidden');
+        document.getElementById('csvFileInput').value = '';
+        document.getElementById('csvParseResult').classList.add('hidden');
+        csvData = [];
+    }
+
+    // フィルター初期状態
+    setFilter('all');
+    init();
+    </script>
+</body>
+</html>
